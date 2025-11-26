@@ -29,8 +29,9 @@ document.getElementById("play").addEventListener("click", () => {
   osc2.start();
   osc1.stop(audioCtx.currentTime + 0.3);
   osc2.stop(audioCtx.currentTime + 0.3);
-  const osc3 = audioCtx.createOscillator();
   
+  const osc3 = audioCtx.createOscillator();
+
   osc3.frequency.value = 440 * 1.25; // 大三度（C#）
   osc3.connect(gainNode);
   osc3.start();

@@ -1,6 +1,12 @@
 require('dotenv').config()
 
+const path = require('path')
+
+const audioDir = path.join(__dirname, '..', 'temp', 'cache')
+
 const config = {
+
+  audioDir,
   
   server: {
     port: process?.env.PORT,
@@ -12,6 +18,12 @@ const config = {
         ? process.env.LIMIT_WHITELIST_IP.split(',').map(ip => ip.trim())
         : [],
     }
+  },
+
+  line: {
+    getLineMessage: process?.env.LINE_GET_MESSAGE_API || "",
+    channelAccessToken: process?.env.LINE_CHANNEL_ACCESS_TOKEN || ""
+  
   }
 }
 
