@@ -10,4 +10,4 @@
 
 ## Demo:
 ### 直接加入下列 Line 帳號傳送語音訊息即可: 
-![/public/images/qrCode.jpg]
+![Line OA QR-code](/public/images/qrCode.jpg)
