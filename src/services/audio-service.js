@@ -1,9 +1,13 @@
 const axios = require('axios')
+const OpenAI = require('openai')
 const path = require('path')
 const fs = require('fs')
+const { exec } = require('child_process')
 
 const config = require('../config')
 const logger = require('../logger')
+
+const client = new OpenAI(config.openai.API_KEY)
 
 const reformUrl = (messageId)=>{
   const url = config.line.getLineMessage
@@ -37,5 +41,26 @@ async function callAndSaveAudio(messageId){
   }
 }
 
+function convertM4pToWav(messageId){
+  const fileName = path.join(config.audioDir, `${messageId}`)
 
-module.exports = { callAndSaveAudio }
+  return new Promise((resolve, reject)=>{
+    exec(`ffmpeg -y -i ${fileName}.m4a -ar 16000 -ac 1 ${fileName}.wav`, (err)=>{
+      if (err) reject(err)
+        else resolve
+    })
+  })
+}
+
+async function transcription(messageId){
+  const fileName = path.join(config.audioDir, `${messageId}.wav`)
+  
+  const transcript = await client.audio.transcriptions.create({
+    file: fs.createReadStream(fileName),
+    model: "gpt-4o-mini-transcribe"
+  })
+
+  return transcript
+}
+
+module.exports = { callAndSaveAudio, convertM4pToWav, transcription }

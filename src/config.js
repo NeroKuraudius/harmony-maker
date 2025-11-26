@@ -24,6 +24,10 @@ const config = {
     getLineMessage: process?.env.LINE_GET_MESSAGE_API || "",
     channelAccessToken: process?.env.LINE_CHANNEL_ACCESS_TOKEN || ""
   
+  },
+
+  openai: {
+    API_KEY: process?.env.OPENAI_API_KEY || ""
   }
 }
 
