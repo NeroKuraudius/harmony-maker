@@ -2,11 +2,12 @@ require('dotenv').config()
 
 const path = require('path')
 
-const audioDir = path.join(__dirname, '..', 'temp', 'cache')
+const cacheDir = path.join(__dirname, '..', 'temp', 'cache')
+const harmonyDir = path.join(__dirname, '..', 'public', 'harmony')
 
 const config = {
 
-  audioDir,
+  cacheDir, harmonyDir,
   
   server: {
     port: process?.env.PORT,
@@ -23,8 +24,8 @@ const config = {
 
   line: {
     getLineMessage: process?.env.LINE_GET_MESSAGE_API || "",
-    channelAccessToken: process?.env.LINE_CHANNEL_ACCESS_TOKEN || ""
-  
+    channelAccessToken: process?.env.LINE_CHANNEL_ACCESS_TOKEN || "",
+    lineReplyApi: process?.env.LINE_REPLY_API || ""
   },
 
   openai: {

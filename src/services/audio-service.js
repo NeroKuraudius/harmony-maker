@@ -30,7 +30,7 @@ const cleanCommand = (inputWav, splitTime, highRate, highTempo, lowRate, lowTemp
       [v_clean][v_high][v_low]amix=inputs=3:duration=longest[outro_mixed];
       
       [intro][outro_mixed]concat=n=2:v=0:a=1[out]
-    " -map "[out]" -ar ${sampleRate} ${outputFinal}`
+    " -map "[out]" -ar ${sampleRate} ${outputMixed}`
 
   return command.replace(/\n/g, ' ')
 }
@@ -44,7 +44,7 @@ async function callAndSaveAudio(messageId){
 
   try{
     const url = reformUrl(messageId)
-    const filePath = path.join(config.audioDir, `${messageId}.m4a`)
+    const filePath = path.join(config.cacheDir, `${messageId}.m4a`)
     
     const res = await axios.get(url, {
       responseType: 'arraybuffer',
@@ -62,18 +62,25 @@ async function callAndSaveAudio(messageId){
 }
 
 function convertM4pToWav(messageId){
-  const fileName = path.join(config.audioDir, `${messageId}`)
+  const fileName = path.join(config.cacheDir, `${messageId}`)
 
   return new Promise((resolve, reject)=>{
     exec(`ffmpeg -y -i ${fileName}.m4a -ar 16000 -ac 1 ${fileName}.wav`, (err)=>{
       if (err) reject(err)
-        else resolve()
+      else {
+        fs.unlink(`${fileName}.m4a`, (unlinkErr) => {
+          if (unlinkErr) {
+            logger.warn(`[Service] Failed to delete ${messageId}.m4a: ${unlinkErr}`);
+          }
+          resolve()
+        })
+      }
     })
   })
 }
 
 async function transcription(messageId){
-  const fileName = path.join(config.audioDir, `${messageId}.wav`)
+  const fileName = path.join(config.cacheDir, `${messageId}.wav`)
   
   try{
     const transcript = await client.audio.transcriptions.create({
@@ -90,30 +97,21 @@ async function transcription(messageId){
   }
 }
 
-// function getLastSentence(text){
-//   if (!text || typeof text !== 'string') return;
-
-//   const sentences = text.split(/(?<=[，。．\.？！!?])/)
-//     .map(s => s.trim())
-//     .filter(Boolean)
-
-//   return sentences.length > 0 ? sentences[sentences.length-1] : text.trim()
-// }
 
 async function generateHarmonyAudio(messageId, splitTime){
-  const inputWav = path.join(config.audioDir, `${messageId}.wav`)
-  const outputMixed = path.join(config.audioDir, `${messageId}_harmony.wav`)
+  const inputWav = path.join(config.cacheDir, `${messageId}.wav`)
+  const outputMixed = path.join(config.harmonyDir, `${messageId}_harmony.wav`)
   
   // 設定原始音高
   const sampleRate = 16000
 
   // 音調參數調整: 
   // 升高4個半音(大三度)
-  const highPitchRatio = 1.2599
+  const highPitchRatio = 1.598
   const highRate = Math.round(sampleRate * highPitchRatio)
   const highTempo = 1 / highPitchRatio
   // 降低5個半音(低四度)
-  const lowPitchRatio = 0.7491
+  const lowPitchRatio = 0.402
   const lowRate = Math.round(sampleRate * lowPitchRatio)
   const lowTempo = 1 / lowPitchRatio
   
@@ -131,4 +129,48 @@ async function generateHarmonyAudio(messageId, splitTime){
   })
 }
 
-module.exports = { callAndSaveAudio, convertM4pToWav, transcription, generateHarmonyAudio }
+async function getAudioDuration(filePath) {
+  return new Promise((resolve, reject) => {
+    exec(`ffprobe -i "${filePath}" -show_entries format=duration -v quiet -of csv="p=0"`, (err, stdout) => {
+      if (err) return reject(err)
+      resolve(Math.round(parseFloat(stdout) * 1000))
+    })
+  })
+}
+
+
+async function replyAudioToLine(replyToken, staticUrl, durationMs){
+  const body = {
+    replyToken,
+    messages: [
+      {
+        type: "audio",
+        originalContentUrl: staticUrl,
+        duration: durationMs
+      }
+    ]
+  }
+
+  await axios.post(config.line.lineReplyApi, body, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.line.channelAccessToken}`
+    }
+  })
+}
+
+
+async function removeOriginalAudio(messageId){
+  const originalWavPath = path.join(config.cacheDir, `${messageId}.wav`)
+
+  fs.unlink(`${originalWavPath}`, (unlinkErr) => {
+    if (unlinkErr) {
+      logger.warn(`[Service] Failed to delete ${messageId}.m4a: ${unlinkErr}`);
+    }
+    resolve()
+  })
+}
+
+
+
+module.exports = { callAndSaveAudio, convertM4pToWav, transcription, generateHarmonyAudio, getAudioDuration, replyAudioToLine, removeOriginalAudio }

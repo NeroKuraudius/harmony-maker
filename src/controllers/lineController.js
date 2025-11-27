@@ -1,5 +1,6 @@
 const logger = require('../logger')
-const { callAndSaveAudio, convertM4pToWav, transcription, generateHarmonyAudio } = require('../services/audio-service')
+const config = require('../config')
+const { callAndSaveAudio, convertM4pToWav, transcription, generateHarmonyAudio, getAudioDuration, replyAudioToLine, removeOriginalAudio } = require('../services/audio-service')
 
 const lineController = {
   parseData: (req,res)=>{
@@ -15,7 +16,7 @@ const lineController = {
 
         // #1 取得語音訊息並儲存
         await callAndSaveAudio(messageId)
-        logger.info(`[Controller] Audio was saved: ${messageId}`)
+        logger.info(`[Controller] Audio was caught: ${messageId}`)
 
 
         // #2 利用ffmpeg將 .m4a 轉為 .wav
@@ -45,8 +46,13 @@ const lineController = {
 
 
         // #6 將音訊回傳給使用者
-        
-        // logger.debug(`##### harmonyPath: ${harmonyPath}`)
+        const staticUrl = config.server.serverUrl + `/static/${messageId}_harmony.wav`
+        const durationMs = await getAudioDuration(harmonyAudioPath)
+        await replyAudioToLine(element.replyToken, staticUrl, durationMs)
+        logger.info(`[Controller] Audio replied to user: ${messageId}`)
+
+        // #7 刪除原音訊
+        await removeOriginalAudio(messageId)
       
       })
     } catch(err){
