@@ -167,7 +167,7 @@ async function removeOriginalAudio(messageId){
     if (unlinkErr) {
       logger.warn(`[Service] Failed to delete ${messageId}.m4a: ${unlinkErr}`);
     }
-    resolve()
+    return ;
   })
 }
 

@@ -53,6 +53,7 @@ const lineController = {
 
         // #7 刪除原音訊
         await removeOriginalAudio(messageId)
+        logger.info(`[Controller] Origianl audio was removed: ${messageId}`)
       
       })
     } catch(err){
