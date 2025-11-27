@@ -17,7 +17,8 @@ const config = {
       whitelistedIP: process.env.LIMIT_WHITELIST_IP
         ? process.env.LIMIT_WHITELIST_IP.split(',').map(ip => ip.trim())
         : [],
-    }
+    },
+    serverUrl: process?.env.SERVER_URL || ""
   },
 
   line: {

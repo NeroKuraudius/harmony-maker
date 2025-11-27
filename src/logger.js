@@ -19,7 +19,7 @@ const colors = {
   error: 'red',
   warn: 'yellow',
   info: 'green',
-  debug: 'white',
+  debug: 'blue',
 }
 
 winston.addColors(colors)

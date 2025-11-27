@@ -1,13 +1,12 @@
 {
   "name": "harmony-maker",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js"
   },
-  "keywords": [],
-  "author": "",
+  "author": "Nero Kuraudius",
   "license": "ISC",
   "description": "",
   "dependencies": {
