@@ -16,16 +16,21 @@ const reformUrl = (messageId)=>{
   return newUrl
 }
 
-const cleanCommand = (inputWav, splitTime, newRate, tempo, sampleRate, outputMixed)=>{
+const cleanCommand = (inputWav, splitTime, highRate, highTempo, lowRate, lowTempo, sampleRate, outputMixed)=>{
   const command = `ffmpeg -y -i ${inputWav} -filter_complex "
       [0:a]atrim=end=${splitTime},asetpts=PTS-STARTPTS[intro];
       [0:a]atrim=start=${splitTime},asetpts=PTS-STARTPTS[outro_raw];
-      [outro_raw]asplit[v_main][v_harm_input];
-      [v_harm_input]asetrate=${newRate},atempo=${tempo},aresample=${sampleRate},volume=0.6[v_harm];
+      
+      [outro_raw]asplit=3[v_main][v_high_in][v_low_in];
+      
+      [v_high_in]asetrate=${highRate},atempo=${highTempo},aresample=${sampleRate},volume=0.5[v_high];
+      [v_low_in]asetrate=${lowRate},atempo=${lowTempo},aresample=${sampleRate},volume=0.6[v_low];
       [v_main]volume=1.0[v_clean];
-      [v_clean][v_harm]amix=inputs=2:duration=longest[outro_mixed];
+      
+      [v_clean][v_high][v_low]amix=inputs=3:duration=longest[outro_mixed];
+      
       [intro][outro_mixed]concat=n=2:v=0:a=1[out]
-    " -map "[out]" -ar ${sampleRate} ${outputMixed}`
+    " -map "[out]" -ar ${sampleRate} ${outputFinal}`
 
   return command.replace(/\n/g, ' ')
 }
@@ -98,15 +103,22 @@ async function transcription(messageId){
 async function generateHarmonyAudio(messageId, splitTime){
   const inputWav = path.join(config.audioDir, `${messageId}.wav`)
   const outputMixed = path.join(config.audioDir, `${messageId}_harmony.wav`)
-
-  // 音調參數調整: 升高4個半音(大三度)
-  const pitchRatio = 1.25992
+  
+  // 設定原始音高
   const sampleRate = 16000
-  const newRate = Math.round(sampleRate * pitchRatio)
-  const tempo = 1 / pitchRatio
+
+  // 音調參數調整: 
+  // 升高4個半音(大三度)
+  const highPitchRatio = 1.2599
+  const highRate = Math.round(sampleRate * highPitchRatio)
+  const highTempo = 1 / highPitchRatio
+  // 降低5個半音(低四度)
+  const lowPitchRatio = 0.7491
+  const lowRate = Math.round(sampleRate * lowPitchRatio)
+  const lowTempo = 1 / lowPitchRatio
   
   return new Promise((resolve, reject)=>{
-    const exeCommand = cleanCommand(inputWav, splitTime, newRate, tempo, sampleRate, outputMixed)
+    const exeCommand = cleanCommand(inputWav, splitTime, highRate, highTempo, lowRate, lowTempo, sampleRate, outputMixed)
 
     exec(exeCommand, (err)=>{
       if(err){
