@@ -17,22 +17,28 @@ const reformUrl = (messageId)=>{
 }
 
 const cleanCommand = (inputWav, splitTime, highRate, highTempo, lowRate, lowTempo, sampleRate, outputMixed)=>{
-  const command = `ffmpeg -y -i ${inputWav} -filter_complex "
+  const filterComplex = `
       [0:a]atrim=end=${splitTime},asetpts=PTS-STARTPTS[intro];
       [0:a]atrim=start=${splitTime},asetpts=PTS-STARTPTS[outro_raw];
       
-      [outro_raw]asplit=3[v_main][v_high_in][v_low_in];
+      [outro_raw]asplit=3[v_main][v_h1_in][v_h2_in];
       
-      [v_high_in]asetrate=${highRate},atempo=${highTempo},aresample=${sampleRate},volume=0.5[v_high];
-      [v_low_in]asetrate=${lowRate},atempo=${lowTempo},aresample=${sampleRate},volume=0.6[v_low];
-      [v_main]volume=1.0[v_clean];
+      [v_h1_in]asetrate=${highRate},atempo=${highTempo},aresample=${sampleRate},lowpass=f=1500,vibrato=f=6:d=0.3,adelay=20|20,volume=0.6[v_h1];
       
-      [v_clean][v_high][v_low]amix=inputs=3:duration=longest[outro_mixed];
+      [v_h2_in]asetrate=${lowRate},atempo=${lowTempo},aresample=${sampleRate},lowpass=f=1500,vibrato=f=6:d=0.3,adelay=40|40,volume=0.5[v_h2];
       
-      [intro][outro_mixed]concat=n=2:v=0:a=1[out]
-    " -map "[out]" -ar ${sampleRate} ${outputMixed}`
+      [v_main]volume=1.2[v_clean];
+      
+      [v_clean][v_h1][v_h2]amix=inputs=3:duration=longest[outro_mixed_dry];
+      
+      [outro_mixed_dry]aecho=0.8:0.88:200:0.3[outro_final];
+      
+      [intro][outro_final]concat=n=2:v=0:a=1[out]
+      `
 
-  return command.replace(/\n/g, ' ')
+  const command = `ffmpeg -y -i ${inputWav} -filter_complex "${filterComplex.replace(/\n/g, '')}" -map "[out]" -c:a aac -b:a 128k -ar 44100 -movflags +faststart ${outputMixed}`
+
+  return command
 }
 
 // ===================================================================== //
@@ -100,18 +106,18 @@ async function transcription(messageId){
 
 async function generateHarmonyAudio(messageId, splitTime){
   const inputWav = path.join(config.cacheDir, `${messageId}.wav`)
-  const outputMixed = path.join(config.harmonyDir, `${messageId}_harmony.wav`)
+  const outputMixed = path.join(config.harmonyDir, `${messageId}_harmony.m4a`)
   
   // 設定原始音高
   const sampleRate = 16000
 
   // 音調參數調整: 
   // 升高4個半音(大三度)
-  const highPitchRatio = 1.598
+  const highPitchRatio = 1.2599
   const highRate = Math.round(sampleRate * highPitchRatio)
   const highTempo = 1 / highPitchRatio
-  // 降低5個半音(低四度)
-  const lowPitchRatio = 0.402
+  // 升高7個半音(純五度)
+  const lowPitchRatio = 1.4983
   const lowRate = Math.round(sampleRate * lowPitchRatio)
   const lowTempo = 1 / lowPitchRatio
   
@@ -139,7 +145,9 @@ async function getAudioDuration(filePath) {
 }
 
 
-async function replyAudioToLine(replyToken, staticUrl, durationMs){
+async function replyAudioToLine(replyToken, messageId, durationMs){
+  const staticUrl = config.server.serverUrl + `/static/harmony/${messageId}_harmony.m4a`
+  
   const body = {
     replyToken,
     messages: [
@@ -157,6 +165,18 @@ async function replyAudioToLine(replyToken, staticUrl, durationMs){
       'Authorization': `Bearer ${config.line.channelAccessToken}`
     }
   })
+
+  // 設定1分鐘後刪除
+  const harmonyAudioPath = path.join(config.harmonyDir, `${messageId}_harmony.m4a`)
+  setTimeout(() => {
+    fs.unlink(harmonyAudioPath, (err) => {
+      if (err) {
+        logger.warn(`[Service] Failed to cleanup output file: ${err}`)
+      }else{
+        logger.info(`[Service] Harmony audio was removed: ${messageId}`)
+      }
+    })
+  }, 60000)
 }
 
 
@@ -165,7 +185,7 @@ async function removeOriginalAudio(messageId){
 
   fs.unlink(`${originalWavPath}`, (unlinkErr) => {
     if (unlinkErr) {
-      logger.warn(`[Service] Failed to delete ${messageId}.m4a: ${unlinkErr}`);
+      logger.warn(`[Service] Failed to delete ${messageId}.m4a: ${unlinkErr}`)
     }
     return ;
   })

@@ -3,14 +3,15 @@ const config = require('../config')
 const { callAndSaveAudio, convertM4pToWav, transcription, generateHarmonyAudio, getAudioDuration, replyAudioToLine, removeOriginalAudio } = require('../services/audio-service')
 
 const lineController = {
-  parseData: (req,res)=>{
+  parseData: async(req,res)=>{
     res.sendStatus(200)
 
     const { events } = req.body
+    if (!events || events.length === 0) return;
     
-    try{
-      events.forEach(async(element) => {
-        if (element.type !== "message" || element.message.type !== "audio") return ;
+    for (const element of events){
+      try {
+        if (element.type !== "message" || element.message.type !== "audio") continue ;
 
         const messageId = element.message.id
 
@@ -32,7 +33,8 @@ const lineController = {
         // #4 取得最後一句的時間戳資訊
         const segments = audioTextObj.segments
         if (!segments || segments.length === 0){
-          throw new Error(`Failed to get segments of audioTextObj`)
+          logger.warn(`[Controller] No segments found for message: ${messageId}`)
+          continue;
         }
 
         const lastSegment = segments[segments.length-1]
@@ -46,19 +48,17 @@ const lineController = {
 
 
         // #6 將音訊回傳給使用者
-        const staticUrl = config.server.serverUrl + `/static/${messageId}_harmony.wav`
         const durationMs = await getAudioDuration(harmonyAudioPath)
-        await replyAudioToLine(element.replyToken, staticUrl, durationMs)
+        await replyAudioToLine(element.replyToken, messageId, durationMs)
         logger.info(`[Controller] Audio replied to user: ${messageId}`)
 
         // #7 刪除原音訊
         await removeOriginalAudio(messageId)
         logger.info(`[Controller] Origianl audio was removed: ${messageId}`)
       
-      })
-    } catch(err){
-        logger.error(`[Controller] Error occurred on parseData: ${err.stack}`)
-        return res.status(400).json({ message: `[Controller] Error occurred on parseData: ${err.message}` })
+      } catch(err){
+        logger.error(`[Controller] Error occurred on parseData on message id ${element.message.id}: ${err.stack}`)
+      }
     }
   }
 }
