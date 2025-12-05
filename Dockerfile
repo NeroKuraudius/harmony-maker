@@ -1,5 +1,5 @@
 # 使用精簡版 Node 基底
-FROM node:18-slim
+FROM node:20-slim
 
 # =======================================
 # 1. 安裝 ffmpeg

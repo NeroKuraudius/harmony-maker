@@ -10,7 +10,7 @@ const config = {
   cacheDir, harmonyDir,
   
   server: {
-    port: process?.env.PORT,
+    port: process?.env.PORT || 4100,
     host: process.env.HOST || "0.0.0.0",
     hostname: process.env.HOSTNAME || "localhost",
     limit: {
