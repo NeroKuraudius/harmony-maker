@@ -1,7 +1,7 @@
 .env
-sound-generate.js
 
 node_modules
-temp
+temp/logs
+temp/cache/*
 
-public/harmony
+public/harmony/*
