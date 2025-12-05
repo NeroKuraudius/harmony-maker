@@ -10,13 +10,11 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@tonejs/midi": "^2.0.28",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-rate-limit": "^8.2.1",
     "openai": "^6.9.1",
-    "tone": "^15.1.22",
     "winston": "^3.18.3"
   },
   "devDependencies": {
