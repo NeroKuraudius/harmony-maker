@@ -1,7 +1,9 @@
 .env
-
 node_modules
+
 temp/logs
 temp/cache/*
+!temp/cache/.gitkeep
 
 public/harmony/*
+!public/harmony/.gitkeep
