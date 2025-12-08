@@ -17,17 +17,17 @@ const lineController = {
 
         // #1 取得語音訊息並儲存
         await callAndSaveAudio(messageId)
-        logger.info(`[Controller] Audio was caught: ${messageId}`)
+        logger.info(`[Controller] #1. Audio was caught: ${messageId}`)
 
 
         // #2 利用ffmpeg將 .m4a 轉為 .wav
         await convertM4pToWav(messageId)
-        logger.info(`[Controller] Success in converting .m4a into .wav: ${messageId}`)
+        logger.info(`[Controller] #2. Success in converting .m4a into .wav: ${messageId}`)
       
 
         // #3 將 .wav 檔用 whisper API 轉為文字
         const audioTextObj = await transcription(messageId)
-        logger.info(`[Controller] Transcribed audio with timestamps: ${messageId}`)
+        logger.info(`[Controller] #3. Transcribed audio with timestamps: ${messageId}`)
 
 
         // #4 取得最後一句的時間戳資訊
@@ -39,22 +39,22 @@ const lineController = {
 
         const lastSegment = segments[segments.length-1]
         const startTime = lastSegment.start
-        logger.info(`[Controller] Last sentence found: "${lastSegment.text}" (since ${startTime}s)`)
+        logger.info(`[Controller] #4. Last sentence found: "${lastSegment.text}" (since ${startTime}s)`)
 
 
         // #5 生成和聲
         const harmonyAudioPath = await generateHarmonyAudio(messageId, startTime)
-        logger.info(`[Controller] Harmony generated and saved: ${messageId}`)
+        logger.info(`[Controller] #5. Harmony generated and saved: ${messageId}`)
 
 
         // #6 將音訊回傳給使用者
         const durationMs = await getAudioDuration(harmonyAudioPath)
         await replyAudioToLine(element.replyToken, messageId, durationMs)
-        logger.info(`[Controller] Audio replied to user: ${messageId}`)
+        logger.info(`[Controller] #6. Audio replied to user: ${messageId}`)
 
         // #7 刪除原音訊
         await removeOriginalAudio(messageId)
-        logger.info(`[Controller] Origianl audio was removed: ${messageId}`)
+        logger.info(`[Controller] #7. Origianl audio was removed: ${messageId}`)
       
       } catch(err){
         logger.error(`[Controller] Error occurred on parseData on message id ${element.message.id}: ${err.stack}`)
