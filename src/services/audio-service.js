@@ -112,11 +112,11 @@ async function generateHarmonyAudio(messageId, splitTime){
   const sampleRate = 16000
 
   // 音調參數調整: 
-  // 升高4個半音(大三度)
+  //// 升高4個半音(大三度)
   const highPitchRatio = 1.2599
   const highRate = Math.round(sampleRate * highPitchRatio)
   const highTempo = 1 / highPitchRatio
-  // 升高7個半音(純五度)
+  //// 升高7個半音(純五度)
   const lowPitchRatio = 1.4983
   const lowRate = Math.round(sampleRate * lowPitchRatio)
   const lowTempo = 1 / lowPitchRatio
