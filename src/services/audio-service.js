@@ -147,8 +147,6 @@ async function getAudioDuration(filePath) {
 
 async function replyAudioToLine(replyToken, messageId, durationMs){
   const staticUrl = config.server.serverUrl + `/static/harmony/${messageId}_harmony.m4a`
-  
-  logger.info(`### For Test - staticUrl: ${staticUrl}`)
 
   const body = {
     replyToken,
