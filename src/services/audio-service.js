@@ -166,7 +166,7 @@ async function replyAudioToLine(replyToken, messageId, durationMs){
     }
   })
 
-  // 設定1分鐘後刪除
+  // 設定6小時後刪除
   const harmonyAudioPath = path.join(config.harmonyDir, `${messageId}_harmony.m4a`)
   setTimeout(() => {
     fs.unlink(harmonyAudioPath, (err) => {
@@ -176,7 +176,7 @@ async function replyAudioToLine(replyToken, messageId, durationMs){
         logger.info(`[Service] Harmony audio was removed: ${messageId}`)
       }
     })
-  }, 180000)
+  }, 21600000) // 60*60*6
 }
 
 
